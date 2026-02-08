@@ -1,10 +1,10 @@
 // Determine API base URL based on environment
 const API_BASE = (() => {
-  // In development, connect to backend on port 8000
-  if (process.env.NODE_ENV === "development") {
+  // Always connect to backend on port 8000 for local development
+  // In production, use relative path (assumes backend is proxied)
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     return "http://localhost:8000/api";
   }
-  // In production, use relative path (assumes backend is proxied)
   return "/api";
 })();
 
