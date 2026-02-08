@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "name": "edge-ai-betting",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/frontend"
+    }
+  ]
+}
