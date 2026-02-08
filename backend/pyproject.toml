@@ -1,0 +1,33 @@
+[project]
+name = "edge-ai-betting"
+version = "0.1.0"
+description = "AI Sports Betting Chatbot Backend"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "sqlalchemy>=2.0.0",
+    "aiosqlite>=0.19.0",
+    "alembic>=1.13.0",
+    "anthropic>=0.39.0",
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "redis>=5.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "scikit-learn>=1.3.0",
+    "xgboost>=2.0.0",
+    "lightgbm>=4.0.0",
+    "python-jose[cryptography]>=3.3.0",
+    "python-multipart>=0.0.6",
+    "sse-starlette>=1.6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "httpx"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
