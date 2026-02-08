@@ -1,4 +1,12 @@
-const API_BASE = "/api";
+// Determine API base URL based on environment
+const API_BASE = (() => {
+  // In development, connect to backend on port 8000
+  if (process.env.NODE_ENV === "development") {
+    return "http://localhost:8000/api";
+  }
+  // In production, use relative path (assumes backend is proxied)
+  return "/api";
+})();
 
 export interface PickFilters {
   sport?: string;
