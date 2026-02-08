@@ -16,7 +16,8 @@ Your Vercel frontend is trying to call `/api` endpoints, but Vercel only hosts f
    - Build Command: `pip install -r requirements.txt`
    - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 6. **Environment Variables**:
-   - `OPENAI_API_KEY=your_key_here`
+   - `ANTHROPIC_API_KEY=your_anthropic_api_key_here`
+   - `ODDS_API_KEY=your_odds_api_key_here`
 7. **Deploy** (takes 2-3 minutes)
 
 ### Option 2: Use Railway (Alternative)
@@ -24,8 +25,9 @@ Your Vercel frontend is trying to call `/api` endpoints, but Vercel only hosts f
 2. **Connect GitHub**
 3. **Select Repository**: `tigee1311/edge-ai-betting`
 4. **Set Root Directory**: `backend/`
-5. **Add Environment Variable**:
-   - `OPENAI_API_KEY=your_key_here`
+5. **Add Environment Variables**:
+   - `ANTHROPIC_API_KEY=your_anthropic_api_key_here`
+   - `ODDS_API_KEY=your_odds_api_key_here`
 6. **Deploy**
 
 ### Configure Vercel
