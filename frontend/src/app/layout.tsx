@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   title: "EDGE AI - Sports Betting Analyst",
   description:
     "AI-powered sports betting analysis with expected value calculations, model breakdowns, and Kelly criterion sizing.",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  themeColor: "#7c3aed",
 };
 
 export default function RootLayout({
