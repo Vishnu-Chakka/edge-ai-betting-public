@@ -40,16 +40,6 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <div className="flex -space-x-3">
-              <img src="/images/avatar1.jpg" className="h-9 w-9 rounded-full border-2 border-white/10" alt="a" />
-              <img src="/images/avatar2.jpg" className="h-9 w-9 rounded-full border-2 border-white/10" alt="b" />
-              <img src="/images/avatar3.jpg" className="h-9 w-9 rounded-full border-2 border-white/10" alt="c" />
-            </div>
-            <div className="text-sm text-white/70">
-              <strong className="text-white">Join 7,500+ members</strong> worldwide
-            </div>
-          </div>
         </div>
       </section>
 
