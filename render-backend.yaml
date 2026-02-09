@@ -3,12 +3,19 @@ services:
     name: edge-ai-betting-backend
     env: python
     region: oregon
+    rootDir: backend
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.18
+        value: "3.11"
       - key: DATABASE_URL
         value: sqlite+aiosqlite:///./edge_ai.db
       - key: CORS_ORIGINS
-        value: https://frontend-ten-rouge-52.vercel.app,https://frontend-6cwecpbav-ayush-s-projects-6863003b.vercel.app
+        value: https://edge-ai-betting-public-jtusn6mgy-vishnus-projects-31db9273.vercel.app,https://edge-ai-betting-public.vercel.app,http://localhost:3000
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ODDS_API_KEY
+        sync: false
+      - key: ENVIRONMENT
+        value: production
