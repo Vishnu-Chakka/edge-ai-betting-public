@@ -51,11 +51,13 @@ from app.api.routes.chat import router as chat_router  # noqa: E402
 from app.api.routes.games import router as games_router  # noqa: E402
 from app.api.routes.picks import router as picks_router  # noqa: E402
 from app.api.routes.user import router as user_router  # noqa: E402
+from app.api.routes.wallet import router as wallet_router  # noqa: E402
 
 app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
 app.include_router(picks_router, prefix="/api/picks", tags=["picks"])
 app.include_router(games_router, prefix="/api/games", tags=["games"])
 app.include_router(user_router, prefix="/api/users", tags=["users"])
+app.include_router(wallet_router, prefix="/api/wallet", tags=["wallet"])
 
 
 # ── Root endpoints ───────────────────────────────────────────────────────────
