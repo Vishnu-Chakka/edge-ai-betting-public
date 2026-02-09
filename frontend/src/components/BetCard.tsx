@@ -6,7 +6,13 @@ import {
   Clock,
   Target,
   DollarSign,
+  AlertCircle,
+  Check,
 } from "lucide-react";
+import { useWallet } from "./WalletBalance";
+import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import { usePayment } from "@alien_org/react";
 
 interface BetCardProps {
   pick: Pick;
@@ -63,6 +69,59 @@ export default function BetCard({ pick }: BetCardProps) {
   const tier = getTierStyles(pick.analysis.confidence_tier);
   const modelEntries = Object.entries(pick.analysis.model_breakdown);
   const maxModelValue = Math.max(...modelEntries.map(([, v]) => v), 1);
+
+  const { balance, refreshBalance } = useWallet();
+  const { isAlienUser, isAuthenticated } = useAuth();
+  const [isPlacingBet, setIsPlacingBet] = useState(false);
+  const [betPlaced, setBetPlaced] = useState(false);
+
+  const recommendedAmount = pick.sizing.recommended_amount || 0;
+  const hasBalanceIssue = isAlienUser && balance < recommendedAmount;
+  const affordableAmount = Math.min(balance, recommendedAmount);
+
+  const payment = usePayment({
+    onPaid: async (txHash) => {
+      console.log('Bet placed successfully:', txHash);
+      setBetPlaced(true);
+      await refreshBalance();
+      setTimeout(() => setBetPlaced(false), 3000);
+    },
+    onCancelled: () => {
+      console.log('Bet cancelled');
+      setIsPlacingBet(false);
+    },
+    onFailed: (errorCode, error) => {
+      console.error('Bet failed:', errorCode, error);
+      setIsPlacingBet(false);
+    },
+  });
+
+  const handlePlaceBet = async () => {
+    if (!isAuthenticated || !recommendedAmount) return;
+
+    setIsPlacingBet(true);
+    try {
+      // In production, create invoice on backend first
+      const invoice = `bet-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      await payment.pay({
+        recipient: process.env.NEXT_PUBLIC_HOUSE_WALLET || 'YOUR_WALLET_ADDRESS',
+        amount: Math.floor(affordableAmount * 1000000).toString(), // Convert to micro units
+        token: 'ALIEN',
+        network: 'alien',
+        invoice,
+        item: {
+          title: `${pick.pick.type}: ${pick.pick.selection}`,
+          iconUrl: 'https://via.placeholder.com/64',
+          quantity: 1,
+        },
+        test: 'paid', // Remove in production
+      });
+    } catch (error) {
+      console.error('Error placing bet:', error);
+      setIsPlacingBet(false);
+    }
+  };
 
   return (
     <div className={`rounded-xl border border-gray-800 bg-gradient-to-br from-black/20 to-transparent p-5 transition-all hover:border-gray-700 hover:shadow-lg hover:shadow-emerald-500/5 border-l-4 ${tier.borderColor}`}>
@@ -222,6 +281,59 @@ export default function BetCard({ pick }: BetCardProps) {
           </div>
         )}
       </div>
+
+      {/* Balance validation and Place Bet button (Alien users only) */}
+      {isAlienUser && isAuthenticated && recommendedAmount > 0 && (
+        <div className="mt-3 space-y-2">
+          {hasBalanceIssue && (
+            <div className="flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-400" />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-yellow-400">Insufficient Balance</p>
+                <p className="text-xs text-yellow-300/70">
+                  Recommended: ${recommendedAmount.toFixed(0)} • Available: ${balance.toFixed(0)}
+                </p>
+                <p className="mt-1 text-xs text-yellow-300/70">
+                  You can bet up to ${affordableAmount.toFixed(0)} with your current balance
+                </p>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={handlePlaceBet}
+            disabled={isPlacingBet || betPlaced || balance < 1}
+            className={`w-full rounded-lg px-4 py-3 text-sm font-semibold transition-all ${
+              betPlaced
+                ? "bg-emerald-500/20 text-emerald-400 cursor-default"
+                : balance < 1
+                ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                : hasBalanceIssue
+                ? "bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 border border-yellow-500/30"
+                : "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30"
+            }`}
+          >
+            {betPlaced ? (
+              <span className="flex items-center justify-center gap-2">
+                <Check className="h-4 w-4" />
+                Bet Placed Successfully
+              </span>
+            ) : isPlacingBet ? (
+              "Processing..."
+            ) : balance < 1 ? (
+              "Insufficient Balance"
+            ) : hasBalanceIssue ? (
+              `Place Reduced Bet ($${affordableAmount.toFixed(0)})`
+            ) : (
+              `Place Bet ($${recommendedAmount.toFixed(0)})`
+            )}
+          </button>
+
+          <p className="text-center text-[10px] text-gray-600">
+            Using Alien wallet • {hasBalanceIssue ? 'Reduced' : 'Recommended'} EV-optimized sizing
+          </p>
+        </div>
+      )}
     </div>
   );
 }
