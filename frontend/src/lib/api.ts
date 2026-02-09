@@ -1,10 +1,24 @@
 // Determine API base URL based on environment
 const API_BASE = (() => {
-  // Always connect to backend on port 8000 for local development
-  // In production, use relative path (assumes backend is proxied)
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return "http://localhost:8000/api";
+  // Check for environment variable first (for Vercel deployment)
+  if (typeof window !== 'undefined') {
+    // Production: Use environment variable or Vercel URL
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 
+                      (window.location.hostname !== 'localhost' 
+                        ? `https://${window.location.hostname.replace('www.', '')}/api` 
+                        : null);
+    
+    if (backendUrl && backendUrl !== '/api') {
+      return backendUrl.endsWith('/api') ? backendUrl : `${backendUrl}/api`;
+    }
+    
+    // Local development: Connect to backend on port 8000
+    if (window.location.hostname === 'localhost') {
+      return "http://localhost:8000/api";
+    }
   }
+  
+  // Fallback to relative path (for SSR or when no backend URL is set)
   return "/api";
 })();
 
