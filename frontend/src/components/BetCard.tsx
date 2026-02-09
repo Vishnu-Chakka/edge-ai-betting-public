@@ -65,6 +65,50 @@ function formatTime(dateString: string): string {
   }
 }
 
+/**
+ * Calculate intelligent bet sizing based on available balance and EV.
+ * Returns suggested bet amount that maximizes EV while respecting balance constraints.
+ */
+function calculateSmartBetAmount(
+  recommendedAmount: number,
+  availableBalance: number,
+  ev: number,
+  kellyFraction: number
+): {
+  suggestedAmount: number;
+  isReduced: boolean;
+  evScalingFactor: number;
+  expectedProfit: number;
+} {
+  // If balance is sufficient, use recommended amount
+  if (availableBalance >= recommendedAmount) {
+    return {
+      suggestedAmount: recommendedAmount,
+      isReduced: false,
+      evScalingFactor: 1.0,
+      expectedProfit: recommendedAmount * (ev / 100),
+    };
+  }
+
+  // Calculate reduced amount while maintaining Kelly principles
+  // Use fractional Kelly to stay conservative when balance-constrained
+  const conservativeKelly = kellyFraction * 0.75; // More conservative when limited
+  const suggestedAmount = Math.min(
+    availableBalance,
+    availableBalance * conservativeKelly
+  );
+
+  // Round to nearest dollar for cleaner UX
+  const roundedAmount = Math.max(1, Math.floor(suggestedAmount));
+
+  return {
+    suggestedAmount: roundedAmount,
+    isReduced: true,
+    evScalingFactor: roundedAmount / recommendedAmount,
+    expectedProfit: roundedAmount * (ev / 100),
+  };
+}
+
 export default function BetCard({ pick }: BetCardProps) {
   const tier = getTierStyles(pick.analysis.confidence_tier);
   const modelEntries = Object.entries(pick.analysis.model_breakdown);
@@ -76,8 +120,17 @@ export default function BetCard({ pick }: BetCardProps) {
   const [betPlaced, setBetPlaced] = useState(false);
 
   const recommendedAmount = pick.sizing.recommended_amount || 0;
+
+  // Calculate smart bet sizing based on available balance
+  const smartBet = calculateSmartBetAmount(
+    recommendedAmount,
+    balance,
+    pick.analysis.ev_percentage,
+    pick.sizing.kelly_fraction
+  );
+
   const hasBalanceIssue = isAlienUser && balance < recommendedAmount;
-  const affordableAmount = Math.min(balance, recommendedAmount);
+  const affordableAmount = smartBet.suggestedAmount;
 
   const payment = usePayment({
     onPaid: async (txHash) => {
@@ -282,24 +335,76 @@ export default function BetCard({ pick }: BetCardProps) {
         )}
       </div>
 
-      {/* Balance validation and Place Bet button (Alien users only) */}
+      {/* Balance-aware betting section (Alien users only) */}
       {isAlienUser && isAuthenticated && recommendedAmount > 0 && (
         <div className="mt-3 space-y-2">
-          {hasBalanceIssue && (
-            <div className="flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-400" />
-              <div className="flex-1">
-                <p className="text-xs font-medium text-yellow-400">Insufficient Balance</p>
-                <p className="text-xs text-yellow-300/70">
-                  Recommended: ${recommendedAmount.toFixed(0)} • Available: ${balance.toFixed(0)}
+          {/* Smart bet sizing info */}
+          <div className={`rounded-lg border p-3 ${
+            hasBalanceIssue
+              ? 'border-yellow-500/30 bg-yellow-500/10'
+              : 'border-emerald-500/30 bg-emerald-500/10'
+          }`}>
+            <div className="flex items-start gap-2">
+              {hasBalanceIssue ? (
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-400" />
+              ) : (
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400" />
+              )}
+              <div className="flex-1 space-y-1.5">
+                <p className={`text-xs font-medium ${
+                  hasBalanceIssue ? 'text-yellow-400' : 'text-emerald-400'
+                }`}>
+                  {hasBalanceIssue ? 'Smart Bet Adjustment' : 'Optimal Bet Size'}
                 </p>
-                <p className="mt-1 text-xs text-yellow-300/70">
-                  You can bet up to ${affordableAmount.toFixed(0)} with your current balance
-                </p>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p className={hasBalanceIssue ? 'text-yellow-300/70' : 'text-emerald-300/70'}>
+                      Your Balance
+                    </p>
+                    <p className={`font-semibold ${hasBalanceIssue ? 'text-yellow-300' : 'text-emerald-300'}`}>
+                      ${balance.toFixed(0)} ALIEN
+                    </p>
+                  </div>
+                  <div>
+                    <p className={hasBalanceIssue ? 'text-yellow-300/70' : 'text-emerald-300/70'}>
+                      Suggested Bet
+                    </p>
+                    <p className={`font-semibold ${hasBalanceIssue ? 'text-yellow-300' : 'text-emerald-300'}`}>
+                      ${smartBet.suggestedAmount.toFixed(0)}
+                      {smartBet.isReduced && (
+                        <span className="ml-1 text-[10px] opacity-70">
+                          ({(smartBet.evScalingFactor * 100).toFixed(0)}% of rec.)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`mt-2 pt-2 border-t ${
+                  hasBalanceIssue ? 'border-yellow-500/20' : 'border-emerald-500/20'
+                }`}>
+                  <p className={hasBalanceIssue ? 'text-yellow-300/70' : 'text-emerald-300/70'}>
+                    Expected Value (EV)
+                  </p>
+                  <p className={`font-bold ${hasBalanceIssue ? 'text-yellow-300' : 'text-emerald-300'}`}>
+                    +${smartBet.expectedProfit.toFixed(2)}
+                    <span className="ml-1 text-xs font-normal opacity-70">
+                      ({pick.analysis.ev_percentage.toFixed(1)}% EV)
+                    </span>
+                  </p>
+                </div>
+
+                {smartBet.isReduced && (
+                  <p className="text-[10px] text-yellow-300/60 mt-1">
+                    💡 Bet size reduced to maintain Kelly criterion with your available balance
+                  </p>
+                )}
               </div>
             </div>
-          )}
+          </div>
 
+          {/* Place bet button */}
           <button
             onClick={handlePlaceBet}
             disabled={isPlacingBet || betPlaced || balance < 1}
@@ -321,16 +426,14 @@ export default function BetCard({ pick }: BetCardProps) {
             ) : isPlacingBet ? (
               "Processing..."
             ) : balance < 1 ? (
-              "Insufficient Balance"
-            ) : hasBalanceIssue ? (
-              `Place Reduced Bet ($${affordableAmount.toFixed(0)})`
+              "Insufficient Balance - Add Funds"
             ) : (
-              `Place Bet ($${recommendedAmount.toFixed(0)})`
+              `Place Bet ($${smartBet.suggestedAmount.toFixed(0)}) • EV: +$${smartBet.expectedProfit.toFixed(2)}`
             )}
           </button>
 
           <p className="text-center text-[10px] text-gray-600">
-            Using Alien wallet • {hasBalanceIssue ? 'Reduced' : 'Recommended'} EV-optimized sizing
+            Powered by Alien Wallet • {smartBet.isReduced ? 'Optimized' : 'Recommended'} Kelly sizing
           </p>
         </div>
       )}
