@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageSquare, Settings, Zap } from "lucide-react";
+import { UserBadge } from "./UserBadge";
 
 const navItems = [
   { href: "/", label: "EDGE AI", icon: Zap, isLogo: true },
@@ -53,7 +54,7 @@ export default function Navbar() {
                 </Link>
               );
             })}
-
+          <UserBadge />
         </div>
       </div>
     </nav>
