@@ -54,13 +54,6 @@ export default function Navbar() {
               );
             })}
 
-          <Link href="/signin" className="text-sm text-white/70 hover:text-white">
-            Sign In
-          </Link>
-
-          <Link href="/signup" className="btn-primary hidden sm:inline-flex">
-            Get Instant Access
-          </Link>
         </div>
       </div>
     </nav>
